@@ -46,13 +46,11 @@ rm(features.DF,store.Df,train.DF)
 #counting number of NAs in the data set if there is any.
 sapply(joined.DF, function(x) sum(is.na(x)))
 
-
-
 # incresing the memory space to R
 memory.limit(size = 1024000)
 
 #creating dummy Data set.
-dummy.joined.DF <- dummyVars(~ ., data = joined.DF)
+dummy.joined.DF <- dummyVars(~ ., data = joined.DF, fullRank = FALSE)
 train.dummy <- predict(dummy.joined.DF, joined.DF)
 
 #checking wherther the number of NAs are same in the original table as well as 
@@ -66,9 +64,7 @@ sum(is.na(train.dummy))
 
 
 #Imputating all the NAs
-pre.process <- preProcess(train.dummy, method = "bagImpute")
-
-
+pre.process  <- preProcess(train.dummy, method = "knnImpute", 5)
 imputed.data <- predict(pre.process,newdata = train.dummy)
 
 View(imputed.data)
