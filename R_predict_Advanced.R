@@ -7,6 +7,7 @@ library(dplyr)    #loading the 'dplyr' library into the working directory for da
 library(caret)    # Handling the missing Values.
 library(lattice)
 library(ggplot2)  # Visualization
+library(RANN)
 
 
 #importing the data set.
@@ -20,7 +21,7 @@ store.Df    <- tbl_df(store.DS)
 features.DF <- tbl_df(features.DS)
 
 # removing the data frames from the working directory.
-rm(train.DS,store.DS,features.DS)
+rm(store.DS,features.DS)
 colnames(store.Df)
 colnames(train.DF)
 
@@ -46,33 +47,37 @@ rm(features.DF,store.Df,train.DF)
 #counting number of NAs in the data set if there is any.
 sapply(joined.DF, function(x) sum(is.na(x)))
 
+# Skipping all rows where we see NAs
+joined.DF <- select(joined.DF, -MarkDown1, -MarkDown2, -MarkDown3, -MarkDown4, -MarkDown5)
+
+# Aggeregating the data glabally.
+
+joined.DF%>%
+  group_by(Date)%>%
+  summarise(Sales = sum(Weekly_Sales))
+
+
+
 # incresing the memory space to R
 memory.limit(size = 1024000)
 
-#creating dummy Data set.
-dummy.joined.DF <- dummyVars(~ ., data = joined.DF, fullRank = FALSE)
-train.dummy <- predict(dummy.joined.DF, joined.DF)
 
-#checking wherther the number of NAs are same in the original table as well as 
-#the the table created by dummyVars.
+#creating dummy Data set.
+dummy.joined.DF <- dummyVars(~ ., data = joined.DF, fullRank = TRUE)
+train.dummy     <- predict(dummy.joined.DF, joined.DF)
+
+#checking wherther the number of NAs are same in the original table as well as the the table created by dummyVars.
 sum(is.na(joined.DF))
 sum(is.na(train.dummy))
 
-
-
-
-
-
 #Imputating all the NAs
-pre.process  <- preProcess(train.dummy, method = "knnImpute", 5)
-imputed.data <- predict(pre.process,newdata = train.dummy)
+# pre.process  <- preProcess(train.dummy, method = "knnImpute", k = 5)
+# imputed.data <- predict(pre.process,newdata = train.dummy)
+# colnames(joined.DF)
+# sapply(joined.DF, class)
+# preProcValues <- preProcess(joined.DF, method = "knnImpute")
+# train_processed <- predict(preProcValues, joined.DF)
+# sum(is.na(train_processed))
 
-View(imputed.data)
 
-colnames(joined.DF)
-sapply(joined.DF, class)
-preProcValues <- preProcess(joined.DF, method = "knnImpute")
 
-train_processed <- predict(preProcValues, joined.DF)
-
-sum(is.na(train_processed))
