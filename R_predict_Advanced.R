@@ -8,6 +8,8 @@ library(caret)    # Handling the missing Values.
 library(lattice)
 library(ggplot2)  # Visualization
 library(RANN)
+library(stats)
+library(plotly)
 
 
 #importing the data set.
@@ -21,7 +23,7 @@ store.Df    <- tbl_df(store.DS)
 features.DF <- tbl_df(features.DS)
 
 # removing the data frames from the working directory.
-rm(store.DS,features.DS)
+rm(train.DS,store.DS,features.DS)
 colnames(store.Df)
 colnames(train.DF)
 
@@ -52,9 +54,34 @@ joined.DF <- select(joined.DF, -MarkDown1, -MarkDown2, -MarkDown3, -MarkDown4, -
 
 # Aggeregating the data glabally.
 
+global_Sales <- 
 joined.DF%>%
   group_by(Date)%>%
   summarise(Sales = sum(Weekly_Sales))
+
+global_Sales.uni <- global_Sales[,2]
+
+global_Sales.ts <- ts(global_Sales.uni, frequency = 56.25)
+global_Sales.ts <- ts(as.vector(global_Sales.ts), frequency = 56)
+decompose <- stl(global_Sales.ts, s.window = 56)
+decompose <- as.matrix(decompose)
+decom <- as.data.frame(decompose$time.series)
+decom$Date <- global_Sales$Date
+decom$Data <- global_Sales$Sales
+
+p1 <- plot_ly(data = decom, x=~Date, y=~Data, type = 'scatter', mode = 'line')
+p2 <- plot_ly(data = decom, x=~Date, y=~seasonal, type = 'scatter', mode = 'line')
+p3 <- plot_ly(data = decom, x=~Date, y=~trend, type = 'scatter', mode = 'line')
+p4 <- plot_ly(data = decom, x=~Date, y=~remainder, type = 'scatter', mode = 'line')
+
+subplot(p1,p2,p3,p4, nrows = 4)
+
+
+train <- head(global_Sales, n=123)
+test  <- tail(global_Sales, n=20)
+
+
+
 
 
 
